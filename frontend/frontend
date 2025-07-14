@@ -1,0 +1,4 @@
+mkdir frontend
+mv index.html frontend/
+mv styles.css frontend/         # если есть
+mv README.md frontend/          # по желанию
