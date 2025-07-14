@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>3D Earth Weather</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+  <style>html, body, #cesiumContainer { width: 100%; height: 100%; margin: 0; }</style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <script>
+    const viewer = new Cesium.Viewer("cesiumContainer", {
+      terrainProvider: Cesium.createWorldTerrain(),
+      imageryProvider: new Cesium.OpenStreetMapImageryProvider(),
+      animation: true, timeline: true
+    });
+
+    viewer.scene.globe.enableLighting = true;
+
+    // 🌥 Облака
+    viewer.imageryLayers.addImageryProvider(new Cesium.SingleTileImageryProvider({
+      url: "https://clouds.matteason.co.uk/images/8192x4096/clouds.jpg",
+      rectangle: Cesium.Rectangle.fromDegrees(-180, -90, 180, 90)
+    }));
+
+    // 📍 Города
+    const cities = [
+      { name: "Berlin", lat: 52.52, lon: 13.405 },
+      { name: "Tokyo", lat: 35.6895, lon: 139.6917 },
+      { name: "New York", lat: 40.7128, lon: -74.006 }
+    ];
+
+    cities.forEach(city => {
+      viewer.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(city.lon, city.lat),
+        point: { pixelSize: 6, color: Cesium.Color.YELLOW },
+        label: { text: city.name, font: "14pt sans-serif", fillColor: Cesium.Color.WHITE }
+      });
+
+      // 🌡️ Погода
+      fetch(`http://localhost:3000/api/weather?lat=${city.lat}&lon=${city.lon}`)
+        .then(res => res.json())
+        .then(data => {
+          const temp = data.main.temp;
+          viewer.entities.add({
+            position: Cesium.Cartesian3.fromDegrees(city.lon, city.lat + 0.5),
+            label: { text: `${temp}°C`, font: "12pt sans-serif", fillColor: Cesium.Color.CYAN }
+          });
+
+          // 💾 Сохранение
+          fetch("http://localhost:3000/weather", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ city: city.name, temperature: temp, humidity: data.main.humidity, lat: city.lat, lon: city.lon })
+          });
+        });
+    });
+
+    // 🚦 TomTom Traffic
+    fetch("http://localhost:3000/api/traffic?lat=52.50931&lon=13.42936")
+      .then(res => res.json())
+      .then(data => {
+        const coords = data.flowSegmentData.coordinates.coordinate.map(c => Cesium.Cartesian3.fromDegrees(c.longitude, c.latitude));
+        const ratio = data.flowSegmentData.currentSpeed / data.flowSegmentData.freeFlowSpeed;
+        let color = Cesium.Color.GREEN;
+        if (ratio < 0.4) color = Cesium.Color.RED;
+        else if (ratio < 0.7) color = Cesium.Color.YELLOW;
+
+        viewer.entities.add({ polyline: { positions: coords, width: 6, material: color } });
+      });
+  </script>
+</body>
+</html>
