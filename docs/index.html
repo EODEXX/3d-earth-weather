@@ -35,7 +35,7 @@
   <script type="module">
     const debug = document.getElementById("debug");
 
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // ← твой токен
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // ← вставь свой токен
 
     try {
       const maptiler = new Cesium.UrlTemplateImageryProvider({
@@ -71,18 +71,38 @@
       const cities = [
         { name: "Токио", lon: 139.6917, lat: 35.6895 },
         { name: "Берлин", lon: 13.4050, lat: 52.5200 },
-        { name: "Нью-Йорк", lon: -74.0060, lat: 40.7128 }
+        { name: "Нью-Йорк", lon: -74.0060, lat: 40.7128 },
+        { name: "Лондон", lon: -0.1276, lat: 51.5074 },
+        { name: "Сидней", lon: 151.2093, lat: -33.8688 },
+        { name: "Москва", lon: 37.6173, lat: 55.7558 },
+        { name: "Париж", lon: 2.3522, lat: 48.8566 }
       ];
 
       cities.forEach(city => {
         viewer.entities.add({
           name: city.name,
           position: Cesium.Cartesian3.fromDegrees(city.lon, city.lat),
-          point: { pixelSize: 10, color: Cesium.Color.YELLOW },
+          point: {
+            pixelSize: 10,
+            color: Cesium.Color.YELLOW
+          },
           label: {
             text: city.name,
             font: "14px sans-serif",
             fillColor: Cesium.Color.WHITE,
             outlineColor: Cesium.Color.BLACK,
             outlineWidth: 2,
-            style: Cesium.Label
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            pixelOffset: new Cesium.Cartesian2(0, -15)
+          }
+        });
+      });
+
+      debug.textContent = "✅ Сцена загружена успешно!";
+    } catch (error) {
+      debug.textContent = "❌ Ошибка инициализации:\n" + error.message;
+    }
+  </script>
+</body>
+</html>
